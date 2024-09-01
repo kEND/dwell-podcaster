@@ -2,6 +2,17 @@ defmodule Podcaster.Scraper do
   @http_client Application.compile_env(:podcaster, :http_client, HTTPoison)
   @dwell_url "https://dwellcc.org"
 
+  defmodule Series do
+    defstruct [
+      :title,
+      :description,
+      :link,
+      :author,
+      :image_url,
+      teachings: []
+    ]
+  end
+
   defmodule Teaching do
     @enforce_keys [:title, :description, :pub_date, :audio_url]
     defstruct [
@@ -20,22 +31,45 @@ defmodule Podcaster.Scraper do
     ]
   end
 
-  def scrape_series(url) do
+  def execute(url) do
+    series = scrape_series(url)
+    teachings = Enum.map(series.teachings, &scrape_teaching/1)
+
+    first_image_url =
+      teachings
+      |> Enum.find(& &1.image_url)
+      |> case do
+        nil -> nil
+        teaching -> teaching.image_url
+      end
+
+    %{series | teachings: teachings, image_url: first_image_url}
+  end
+
+  def scrape_series(url, series \\ nil) do
+    series = series || %Series{}
+
     with {:ok, body} <- @http_client.get(url),
          {:ok, document} <- Floki.parse_document(body.body) do
-      teaching_ids =
-        document
-        |> Floki.find("#teachingList a")
-        |> Floki.attribute("href")
-        |> Enum.map(fn href ->
-          href
-          |> String.split("/")
-          |> List.last()
-        end)
+      series = Map.update(series, :teachings, extract_teaching_ids(document), &(&1 ++ extract_teaching_ids(document)))
+
+      description = extract_series_description(document)
+
+      # regex match to extract title, author out of description
+      [_, title, author, _year] = Regex.run(~r/(.+) by (.+) \((.+)\)/, description)
+
+      series =
+        series
+        |> update_if_empty(:description, description)
+        |> update_if_empty(:title, title)
+        |> update_if_empty(:author, author)
+        |> update_if_empty(:link, url)
+
+      {url, _page_param?} = remove_page_param(url)
 
       # Check for pagination and scrape additional pages if necessary
-      next_page = Floki.find(document, ".pagination .next a") |> Floki.attribute("href")
-      teaching_ids ++ if next_page != [], do: scrape_series(next_page), else: []
+      next_page_url = find_next_page_url(document, url)
+      if next_page_url, do: scrape_series(next_page_url, series), else: series
     else
       error -> raise "Failed to scrape series: #{inspect(error)}"
     end
@@ -73,6 +107,57 @@ defmodule Podcaster.Scraper do
       }
     else
       error -> raise "Failed to scrape teaching: #{inspect(error)}"
+    end
+  end
+
+  defp update_if_empty(map, key, value) do
+    Map.update(map, key, value, fn existing ->
+      if is_nil(existing) or existing == "", do: value, else: existing
+    end)
+  end
+
+  defp extract_teaching_ids(document) do
+    document
+    |> Floki.find("#teachingList div")
+    |> Floki.attribute("data-key")
+  end
+
+  defp extract_series_description(document) do
+    "Series: " <> description =
+      document
+      |> Floki.find("#active-filters ul li")
+      |> Floki.text()
+      |> String.trim()
+
+    description
+  end
+
+  defp remove_page_param(url) do
+    uri = URI.parse(url)
+    query_params = URI.decode_query(uri.query || "")
+    updated_params = Map.delete(query_params, "page")
+
+    updated_query =
+      if Enum.empty?(updated_params) do
+        nil
+      else
+        URI.encode_query(updated_params)
+      end
+
+    uri = %{uri | query: updated_query}
+    {URI.to_string(uri), updated_query != uri.query}
+  end
+
+  defp find_next_page_url(document, url) do
+    document
+    |> Floki.find(".pagination .next")
+    |> Floki.filter_out("li .next .disabled")
+    |> Floki.find("a")
+    |> Floki.attribute("data-page")
+    |> List.first()
+    |> case do
+      nil -> nil
+      page -> url <> "&page=#{page}"
     end
   end
 
