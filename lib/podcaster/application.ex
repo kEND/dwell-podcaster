@@ -16,7 +16,8 @@ defmodule Podcaster.Application do
       # Start a worker by calling: Podcaster.Worker.start_link(arg)
       # {Podcaster.Worker, arg},
       # Start to serve requests, typically the last entry
-      PodcasterWeb.Endpoint
+      PodcasterWeb.Endpoint,
+      Podcaster.Cache
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

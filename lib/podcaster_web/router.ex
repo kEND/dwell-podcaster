@@ -17,7 +17,7 @@ defmodule PodcasterWeb.Router do
   scope "/", PodcasterWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", PodcastLive
   end
 
   # Other scopes may use custom stacks.

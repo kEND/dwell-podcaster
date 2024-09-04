@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+  <channel>
+    <title><%= @series.title %></title>
+    <link><%= @series.link %></link>
+    <description><%= @series.description %></description>
+    <language>en-us</language>
+    <copyright>© <%= DateTime.utc_now().year %> Dwell Community Church</copyright>
+    <pubDate><%= format_date(@most_recent_pub_date) %></pubDate>
+    <lastBuildDate><%= format_date(DateTime.utc_now()) %></lastBuildDate>
+    <image>
+      <url><%= @series.image_url %></url>
+      <title><%= @series.title %></title>
+      <link><%= @series.link %></link>
+    </image>
+    <%= for teaching <- @series.teachings do %>
+    <item>
+      <title><%= teaching.title %></title>
+      <link><%= teaching.url %></link>
+      <guid isPermaLink="false"><%= teaching.guid %></guid>
+      <pubDate><%= format_date(teaching.pub_date) %></pubDate>
+      <description><![CDATA[<%= teaching.description %>]]></description>
+      <author><%= teaching.author %></author>
+      <enclosure url="<%= teaching.audio_url %>" length="0" type="audio/mpeg"/>
+      <itunes:author><%= teaching.author %></itunes:author>
+      <itunes:subtitle><%= teaching.subtitle %></itunes:subtitle>
+      <itunes:summary><%= teaching.description %></itunes:summary>
+      <itunes:duration><%= format_duration(teaching.duration) %></itunes:duration>
+      <itunes:explicit><%= teaching.explicit %></itunes:explicit>
+      <itunes:image href="<%= teaching.image_url %>"/>
+      <itunes:episodeType><%= teaching.episode_type %></itunes:episodeType>
+      <%= if teaching.block do %>
+      <itunes:block>yes</itunes:block>
+      <% end %>
+    </item>
+    <% end %>
+  </channel>
+</rss>
