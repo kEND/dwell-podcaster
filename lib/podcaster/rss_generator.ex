@@ -10,19 +10,17 @@ defmodule Podcaster.RSSGenerator do
   def generate_feed(series) do
     assigns = %{
       series: series,
-      most_recent_pub_date: most_recent_pub_date(series.teachings)
+      most_recent_pub_date: series.most_recent_pub_date
     }
 
     render_rss(assigns)
   end
 
-  defp most_recent_pub_date(teachings) do
-    teachings
-    |> Enum.map(& &1.pub_date)
-    |> Enum.max(NaiveDateTime, fn -> nil end)
-  end
-
   defp format_date(nil), do: ""
+
+  defp format_date(date) when is_binary(date) do
+    date
+  end
 
   defp format_date(%NaiveDateTime{} = date) do
     date

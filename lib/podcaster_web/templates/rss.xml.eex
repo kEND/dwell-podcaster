@@ -18,7 +18,7 @@
       <title><%= teaching.title %></title>
       <link><%= teaching.url %></link>
       <guid isPermaLink="false"><%= teaching.guid %></guid>
-      <pubDate><%= format_date(teaching.pub_date) %></pubDate>
+      <pubDate><%= teaching.pub_date %></pubDate>
       <description><![CDATA[<%= teaching.description %>]]></description>
       <author><%= teaching.author %></author>
       <enclosure url="<%= teaching.audio_url %>" length="0" type="audio/mpeg"/>

@@ -11,6 +11,7 @@ defmodule Podcaster.Scraper do
       :link,
       :author,
       :image_url,
+      :most_recent_pub_date,
       teachings: []
     ]
   end
@@ -95,8 +96,15 @@ defmodule Podcaster.Scraper do
       description: "Teachings from Dwell Community Church - #{series_data["SeriesName"]}",
       # Update if there's a series-specific image
       image_url: "#{@base_url}/sites/default/files/podcast_image.jpg",
-      teachings: teachings
+      teachings: teachings,
+      most_recent_pub_date: most_recent_pub_date(teachings)
     }
+  end
+
+  defp most_recent_pub_date(teachings) do
+    teachings
+    |> List.last()
+    |> Map.get(:pub_date)
   end
 
   defp parse_teaching(api_data, json_data) do
