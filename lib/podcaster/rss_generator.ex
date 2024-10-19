@@ -12,6 +12,7 @@ defmodule Podcaster.RSSGenerator do
       series: series,
       most_recent_pub_date: most_recent_pub_date(series.teachings)
     }
+
     render_rss(assigns)
   end
 
@@ -22,11 +23,13 @@ defmodule Podcaster.RSSGenerator do
   end
 
   defp format_date(nil), do: ""
+
   defp format_date(%NaiveDateTime{} = date) do
     date
     |> DateTime.from_naive!("Etc/UTC")
     |> format_date()
   end
+
   defp format_date(%DateTime{} = date) do
     Calendar.strftime(date, "%a, %d %b %Y %H:%M:%S GMT")
   end
@@ -40,5 +43,6 @@ defmodule Podcaster.RSSGenerator do
     |> Enum.map(&String.pad_leading(Integer.to_string(&1), 2, "0"))
     |> Enum.join(":")
   end
+
   defp format_duration(_), do: "00:00:00"
 end

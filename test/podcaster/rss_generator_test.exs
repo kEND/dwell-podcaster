@@ -68,7 +68,12 @@ defmodule Podcaster.RSSGeneratorTest do
       assert String.contains?(rss_feed, "<pubDate>Sun, 01 Jan 2023 12:00:00 GMT</pubDate>")
       assert String.contains?(rss_feed, "<description><![CDATA[Test teaching 1 description]]></description>")
       assert String.contains?(rss_feed, "<author>John Doe</author>")
-      assert String.contains?(rss_feed, "<enclosure url=\"https://example.com/teaching/1/audio.mp3\" length=\"0\" type=\"audio/mpeg\"/>")
+
+      assert String.contains?(
+               rss_feed,
+               "<enclosure url=\"https://example.com/teaching/1/audio.mp3\" length=\"0\" type=\"audio/mpeg\"/>"
+             )
+
       assert String.contains?(rss_feed, "<itunes:author>John Doe</itunes:author>")
       assert String.contains?(rss_feed, "<itunes:subtitle>Test subtitle 1</itunes:subtitle>")
       assert String.contains?(rss_feed, "<itunes:duration>00:30:00</itunes:duration>")

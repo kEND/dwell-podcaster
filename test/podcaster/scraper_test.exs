@@ -12,16 +12,22 @@ defmodule Podcaster.ScraperTest do
 
   describe "scrape_series/1" do
     test "fetches and parses series data" do
-      api_url = "https://www.dwellcc.org/api/org.dwellcc/TeachingFinder/TeachingSearch?SearchSeriesGuid=#{@series_guid}&ItemsPerPage=100&PageNumber=1"
+      api_url =
+        "https://www.dwellcc.org/api/org.dwellcc/TeachingFinder/TeachingSearch?SearchSeriesGuid=#{@series_guid}&ItemsPerPage=100&PageNumber=1"
 
       expect(MockHTTPoison, :get, fn ^api_url ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: Jason.encode!(%{
-          "Series" => [%{"SeriesName" => "Hebrews", "SeriesGuid" => @series_guid}],
-          "Teachings" => [
-            %{"Title" => "Introduction", "CanonicalUrl" => "/teaching/4184"},
-            %{"Title" => "Jesus is Better", "CanonicalUrl" => "/teaching/4194"}
-          ]
-        })}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body:
+             Jason.encode!(%{
+               "Series" => [%{"SeriesName" => "Hebrews", "SeriesGuid" => @series_guid}],
+               "Teachings" => [
+                 %{"Title" => "Introduction", "CanonicalUrl" => "/teaching/4184"},
+                 %{"Title" => "Jesus is Better", "CanonicalUrl" => "/teaching/4194"}
+               ]
+             })
+         }}
       end)
 
       # Mock responses for individual teachings
@@ -47,7 +53,8 @@ defmodule Podcaster.ScraperTest do
     end
 
     test "handles errors when fetching series data" do
-      api_url = "https://www.dwellcc.org/api/org.dwellcc/TeachingFinder/TeachingSearch?SearchSeriesGuid=#{@series_guid}&ItemsPerPage=100&PageNumber=1"
+      api_url =
+        "https://www.dwellcc.org/api/org.dwellcc/TeachingFinder/TeachingSearch?SearchSeriesGuid=#{@series_guid}&ItemsPerPage=100&PageNumber=1"
 
       expect(MockHTTPoison, :get, fn ^api_url ->
         {:error, %HTTPoison.Error{reason: "network error"}}
@@ -59,36 +66,48 @@ defmodule Podcaster.ScraperTest do
 
   describe "scrape_teaching/1" do
     test "extracts teaching data from a teaching page" do
-      teaching_data = %{"CanonicalUrl" => "/teaching/4184", "Title" => "Introduction", "TeachingGuid" => "4184", "TitleAbbr" => "Intro"}
+      teaching_data = %{
+        "CanonicalUrl" => "/teaching/4184",
+        "Title" => "Introduction",
+        "TeachingGuid" => "4184",
+        "TitleAbbr" => "Intro"
+      }
+
       teaching_url = "https://www.dwellcc.org/teaching/4184"
 
       expect(MockHTTPoison, :get, fn ^teaching_url ->
-        {:ok, %HTTPoison.Response{status_code: 200, body: """
-          <html>
-            <script type="application/ld+json">
-              {
-                "datePublished": "2015-01-08T00:00:00Z",
-                "description": "The God of the Bible is unique in His desire to communicate...",
-                "author": {"name": "Dennis McCallum", "image": "/GetImage.ashx?guid=ef9b2d1a-afca-451d-825c-81abad617162"},
-                "hasPart": [{"contentUrl": "https://www.dwellcc.org/media/10BCD360-20F1-E2F3-0F12-B5B3B44BD18F.m4a"}]
-              }
-            </script>
-          </html>
-        """}}
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: """
+             <html>
+               <script type="application/ld+json">
+                 {
+                   "datePublished": "07/12/2015",
+                   "abstract": "The God of the Bible is unique in His desire to communicate...",
+                   "author": {"name": "Dennis McCallum", "image": "/GetImage.ashx?guid=ef9b2d1a-afca-451d-825c-81abad617162"},
+                   "hasPart": [{"contentUrl": "https://www.dwellcc.org/media/10BCD360-20F1-E2F3-0F12-B5B3B44BD18F.m4a"}],
+                   "url": "https://www.dwellcc.org/teaching/4184"
+                 }
+               </script>
+             </html>
+           """
+         }}
       end)
 
       assert %Teaching{} = teaching = Scraper.scrape_teaching(teaching_data)
 
       assert teaching.title == "Introduction"
       assert teaching.description == "The God of the Bible is unique in His desire to communicate..."
-      assert teaching.pub_date == ~U[2015-01-08 00:00:00Z]
+      assert teaching.pub_date == "2015-07-12T00:00:00Z"
       assert teaching.audio_url == "https://www.dwellcc.org/media/10BCD360-20F1-E2F3-0F12-B5B3B44BD18F.m4a"
       assert teaching.guid == "4184"
       assert teaching.author == "Dennis McCallum"
       assert teaching.subtitle == "Intro"
       assert teaching.image_url == "https://www.dwellcc.org/GetImage.ashx?guid=ef9b2d1a-afca-451d-825c-81abad617162"
       assert teaching.url == "https://www.dwellcc.org/teaching/4184"
-      assert teaching.duration == "PT36M07S"  # 1h30m in seconds
+      # 1h30m in seconds
+      assert teaching.duration == "PT36M07S"
     end
 
     test "handles errors when fetching teaching data" do
@@ -99,7 +118,8 @@ defmodule Podcaster.ScraperTest do
         {:error, %HTTPoison.Error{reason: "network error"}}
       end)
 
-      assert {:error, "Failed to fetch teaching: %HTTPoison.Error{reason: \"network error\", id: nil}"} = Scraper.scrape_teaching(teaching_data)
+      assert {:error, "Failed to fetch teaching: %HTTPoison.Error{reason: \"network error\", id: nil}"} =
+               Scraper.scrape_teaching(teaching_data)
     end
   end
 end

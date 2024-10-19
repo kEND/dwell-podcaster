@@ -8,15 +8,18 @@ defmodule PodcasterWeb.PodcastLive do
 
   def handle_event("generate", %{"url" => url}, socket) do
     series_guid = extract_series_guid(url)
+
     case Cache.get(series_guid) do
       nil ->
         case generate_feed(series_guid) do
           {:ok, rss} ->
             Cache.put(series_guid, rss)
             {:noreply, assign(socket, url: url, rss: rss, error: nil)}
+
           {:error, message} ->
             {:noreply, assign(socket, url: url, error: message, rss: nil)}
         end
+
       rss ->
         {:noreply, assign(socket, url: url, rss: rss, error: nil)}
     end
@@ -28,6 +31,7 @@ defmodule PodcasterWeb.PodcastLive do
     case Scraper.scrape_series(series_guid) do
       {:ok, series} ->
         {:ok, RSSGenerator.generate_feed(series)}
+
       {:error, message} ->
         {:error, message}
     end
