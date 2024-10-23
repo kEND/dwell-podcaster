@@ -23,9 +23,27 @@ import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+let Hooks = {}
+
+Hooks.CopyToClipboard = {
+  mounted() {
+    this.el.addEventListener("click", e => {
+      e.preventDefault()
+      const text = this.el.getAttribute("data-clipboard-text")
+      navigator.clipboard.writeText(text).then(() => {
+        // You can add a toast notification here if you want
+        console.log("Copied to clipboard")
+      }).catch(err => {
+        console.error('Failed to copy: ', err)
+      })
+    })
+  }
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits
@@ -41,4 +59,3 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-
